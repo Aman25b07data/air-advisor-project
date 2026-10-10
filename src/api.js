@@ -1,5 +1,4 @@
-import { mockAdvice } from './mock';
-
+import { mockAdvice, mockReport } from './mock';
 const BASE = import.meta.env.VITE_API_BASE;
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 
@@ -104,4 +103,16 @@ export const getAdvice = async (profileId, persona, home) => {
   }
 
   return normalizeAdvice(data);
+};
+export const getReport = async (profileId, persona, home) => {
+  // Use demonstration data when mock mode is enabled.
+  if (USE_MOCK) {
+    return mockReport;
+  }
+
+  // The report endpoint has not been confirmed yet.
+  // Do not call an endpoint that may not exist.
+  throw new Error(
+    'The real report API is not available yet. Please use mock mode to preview the report.'
+  );
 };

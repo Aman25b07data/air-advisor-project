@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import './App.css';
 
+
 import OnboardingForm from './OnboardingForm';
 import TodayView from './TodayView';
+import ReportView from './ReportView';
 
 export default function App() {
   const [profile, setProfile] = useState(() => {
@@ -70,12 +72,7 @@ export default function App() {
 
       {tab === 'today' && <TodayView profile={profile} />}
 
-      {tab === 'report' && (
-        <div className="card">
-          <h2>Air Quality Report</h2>
-          <p>Your detailed report will appear here in the next step.</p>
-        </div>
-      )}
+      {tab === 'report' && <ReportView profile={profile} />}
     </div>
   );
 }

@@ -7,64 +7,121 @@ export default function TodayView({ profile }) {
   const [state, setState] = useState({
     loading: true,
     error: '',
-    data: null
+    data: null,
   });
 
-  const load = () => {
+  // Remember the selected mode across page refreshes.
+  const [persona, setPersona] = useState(() => {
+    return (
+      localStorage.getItem('airAdvisorPersona') ||
+      profile.persona ||
+      'adult'
+    );
+  });
+
+  const load = async () => {
     setState({
       loading: true,
       error: '',
-      data: null
+      data: null,
     });
 
-    getAdvice(profile.profileId, profile.persona, profile.home)
-      .then((data) =>
-        setState({
-          loading: false,
-          error: '',
-          data
-        })
-      )
-      .catch((e) =>
-        setState({
-          loading: false,
-          error: e.message,
-          data: null
-        })
+    try {
+      const data = await getAdvice(
+        profile.profileId,
+        persona,
+        profile.home
       );
+
+      setState({
+        loading: false,
+        error: '',
+        data,
+      });
+    } catch (e) {
+      setState({
+        loading: false,
+        error: e.message || 'Unable to load air-quality advice.',
+        data: null,
+      });
+    }
   };
 
-  useEffect(load, [profile]);
+  // Reload advice whenever the profile or selected mode changes.
+  useEffect(() => {
+    load();
+  }, [profile, persona]);
 
-  if (state.loading) {
-    return <p>Checking today's air...</p>;
-  }
-
-  if (state.error) {
-    return (
-      <div className="card">
-        <p className="error">
-          Couldn't load advice: {state.error}
-        </p>
-        <button onClick={load}>Try again</button>
-      </div>
-    );
-  }
+  // Update the mode and save it locally.
+  const changePersona = (newPersona) => {
+    setPersona(newPersona);
+    localStorage.setItem('airAdvisorPersona', newPersona);
+  };
 
   return (
-    <>
-      <DecisionCard
-        d={state.data}
-        persona={profile.persona}
-      />
+    <section>
+      <div className="card">
+        <h2>Choose your advisory mode</h2>
 
-      <h2>Best departure options</h2>
+        <div className="mode-toggle">
+          <button
+            type="button"
+            className={persona === 'adult' ? 'active' : ''}
+            onClick={() => changePersona('adult')}
+          >
+            General Mode
+          </button>
 
-      <WindowChart windows={state.data.windows} />
+          <button
+            type="button"
+            className={persona === 'school' ? 'active' : ''}
+            onClick={() => changePersona('school')}
+          >
+            School Mode
+          </button>
+        </div>
 
-      <p className="note">
-        Lower is better. Values are estimates from forecast data.
-      </p>
-    </>
+        <p className="note">
+          {persona === 'school'
+            ? 'School Mode provides guidance for parents, teachers, and school administrators.'
+            : 'General Mode provides daily air-quality and travel recommendations.'}
+        </p>
+      </div>
+
+      {state.loading && (
+        <div className="card">
+          <p>Checking today's air...</p>
+        </div>
+      )}
+
+      {!state.loading && state.error && (
+        <div className="card">
+          <p className="error">
+            Couldn't load advice: {state.error}
+          </p>
+
+          <button type="button" onClick={load}>
+            Try again
+          </button>
+        </div>
+      )}
+
+      {!state.loading && !state.error && state.data && (
+        <>
+          <DecisionCard
+            d={state.data}
+            persona={persona}
+          />
+
+          <h2>Best departure options</h2>
+
+          <WindowChart windows={state.data.windows || []} />
+
+          <p className="note">
+            Lower is better. Values are estimates from forecast data.
+          </p>
+        </>
+      )}
+    </section>
   );
 }
